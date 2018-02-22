@@ -26,8 +26,14 @@
 #define ADDR3 2 //direccion de la EEPROM para la tempSet3
 #define ADDR4 3 // direccion de la EEPROM para la tempSet4
 
+#define RELAY1 5 
+#define RELAY2 4 
+#define RELAY3 0 
+#define RELAY4 2 
+
 #define ONE_WIRE_BUS 14
 #define TEMPERATURE_PRECISION 9
+#define HISTERESIS 0.3
 
 
 // Fill in your WiFi router SSID and password
@@ -53,7 +59,7 @@ DeviceAddress direccionsensor3 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 }
 DeviceAddress direccionsensor4 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 DeviceAddress direccionsensor5 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 
-Tempo t_temp(30*1000); // temporizador para la lectura de temperatura
+Tempo t_temp(3*1000); // temporizador para la lectura de temperatura
 
 
 ESP8266WebServer server(80);
@@ -293,11 +299,32 @@ void setup(void)
   Serial.print(tempsensada4);
   Serial.print(" Sensor5: ");
   Serial.println(tempsensada5);
+
+  pinMode(RELAY1, OUTPUT);
+  pinMode(RELAY2, OUTPUT);
+  pinMode(RELAY3, OUTPUT);
+  pinMode(RELAY4, OUTPUT);
+}
+
+void control(){
+
+
+  sensors.requestTemperatures();
+  tempsensada1= sensors.getTempC(direccionsensor1);
+
+  if (tempsensada1 > tempset1 + HISTERESIS){
+    digitalWrite(RELAY1, LOW);
+    Serial.println("Relay 1 ON");
+  }else{
+    digitalWrite(RELAY1,HIGH);
+    Serial.println("Relay 1 OFF");
+  } 
+ 
 }
 
 void loop(void)
 {
-  
+  server.handleClient();
   if (t_temp.state()){ // realiza la lectura de la temperatura, actualiza el lcd y comanda los relays.
     control();
   }
