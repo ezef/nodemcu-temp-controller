@@ -19,19 +19,20 @@
 #include <EEPROM.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <tempo.h>
 
 #define ADDR1 0 //direccion de la EEPROM para la tempSet1
 #define ADDR2 1 // direccion de la EEPROM para la tempSet2
 #define ADDR3 2 //direccion de la EEPROM para la tempSet3
 #define ADDR4 3 // direccion de la EEPROM para la tempSet4
 
-#define ONE_WIRE_BUS 2
+#define ONE_WIRE_BUS 14
 #define TEMPERATURE_PRECISION 9
 
 
 // Fill in your WiFi router SSID and password
-const char* ssid = "cokiba";
-const char* password = "colegioki2000";
+const char* ssid = "La P0sTA";
+const char* password = "laredonda1239";
 
 byte tempset1;
 byte tempset2;
@@ -46,11 +47,13 @@ float tempsensada5;
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-DeviceAddress direccionsensor1 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
-DeviceAddress direccionsensor2 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+DeviceAddress direccionsensor1 = { 0x28, 0xEE, 0xE3, 0xF, 0x15, 0x16, 0x2, 0xAF };
+DeviceAddress direccionsensor2 = { 0x28, 0xEE, 0x3A, 0x15, 0x18, 0x16, 0x1, 0xD3 };
 DeviceAddress direccionsensor3 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 DeviceAddress direccionsensor4 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 DeviceAddress direccionsensor5 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+
+Tempo t_temp(30*1000); // temporizador para la lectura de temperatura
 
 
 ESP8266WebServer server(80);
@@ -294,6 +297,9 @@ void setup(void)
 
 void loop(void)
 {
-  server.handleClient();
+  
+  if (t_temp.state()){ // realiza la lectura de la temperatura, actualiza el lcd y comanda los relays.
+    control();
+  }
   
 }
