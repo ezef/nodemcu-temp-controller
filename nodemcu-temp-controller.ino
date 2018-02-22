@@ -17,12 +17,16 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define ADDR1 0 //direccion de la EEPROM para la tempSet1
 #define ADDR2 1 // direccion de la EEPROM para la tempSet2
 #define ADDR3 2 //direccion de la EEPROM para la tempSet3
 #define ADDR4 3 // direccion de la EEPROM para la tempSet4
 
+#define ONE_WIRE_BUS 2
+#define TEMPERATURE_PRECISION 9
 
 
 // Fill in your WiFi router SSID and password
@@ -38,9 +42,15 @@ float tempsensada1;
 float tempsensada2;
 float tempsensada3;
 float tempsensada4;
+float tempsensada5;
 
-
-
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress direccionsensor1 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+DeviceAddress direccionsensor2 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+DeviceAddress direccionsensor3 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+DeviceAddress direccionsensor4 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+DeviceAddress direccionsensor5 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 
 
 ESP8266WebServer server(80);
@@ -148,7 +158,7 @@ void handleSubmit()
 
   if (!server.hasArg("password")) return returnFail("BAD ARGS");
   pass = server.arg("password");
-  if (pass == "angelica") {
+  if (pass == "angela") {
     server.send(200, "text/html", html_principal());
   }  else {
     returnFail("shupala");
@@ -181,7 +191,8 @@ void setferm1(){
   if ( server.arg("tempset") != ""){
     Serial.print(" Seteo de Ferm 1: ");
     Serial.println(server.arg("tempset"));
-    EEPROM.put(ADDR1,(byte)server.arg("tempset").toInt());
+    tempset1= (byte)server.arg("tempset").toInt();
+    EEPROM.put(ADDR1,tempset1);
     EEPROM.commit();
     returnOK();
   }else{
@@ -192,7 +203,8 @@ void setferm2(){
   if ( server.arg("tempset") != ""){
     Serial.print(" Seteo de Ferm 2: ");
     Serial.println(server.arg("tempset"));
-    EEPROM.put(ADDR2,(byte)server.arg("tempset").toInt());
+    tempset2= (byte)server.arg("tempset").toInt();
+    EEPROM.put(ADDR2,tempset2);
     EEPROM.commit();
     returnOK();
   }else{
@@ -203,7 +215,8 @@ void setferm3(){
   if ( server.arg("tempset") != ""){
     Serial.print(" Seteo de Ferm 3: ");
     Serial.println(server.arg("tempset"));
-    EEPROM.put(ADDR3,(byte)server.arg("tempset").toInt());
+    tempset3= (byte)server.arg("tempset").toInt();
+    EEPROM.put(ADDR3,tempset3);
     EEPROM.commit();
     returnOK();
   }else{
@@ -214,7 +227,8 @@ void setferm4(){
   if ( server.arg("tempset") != ""){
     Serial.print(" Seteo de Ferm 4: ");
     Serial.println(server.arg("tempset"));
-    EEPROM.put(ADDR4,(byte)server.arg("tempset").toInt());
+    tempset4= (byte)server.arg("tempset").toInt();
+    EEPROM.put(ADDR4,tempset4);
     EEPROM.commit();
     returnOK();
   }else{
@@ -226,6 +240,7 @@ void setup(void)
 
   Serial.begin(115200);
   EEPROM.begin(512);
+  sensors.begin();
   WiFi.begin(ssid, password);
   Serial.println("");
 
@@ -251,7 +266,7 @@ void setup(void)
   server.onNotFound(handleNotFound);
 
   server.begin();
-  Serial.print("Connect to http://esp8266WebForm.local or http://");
+  Serial.print("Connect to http://");
   Serial.println(WiFi.localIP());
 
   tempset1= EEPROM.read(ADDR1);
@@ -259,11 +274,22 @@ void setup(void)
   tempset3= EEPROM.read(ADDR3);
   tempset4= EEPROM.read(ADDR4);
 
-  tempsensada1=12;
-  tempsensada2=13;
-  tempsensada3=14;
-  tempsensada4=15;
-  
+  tempsensada1=sensors.getTempC(direccionsensor1);
+  tempsensada2=sensors.getTempC(direccionsensor2);
+  tempsensada3=sensors.getTempC(direccionsensor3);
+  tempsensada4=sensors.getTempC(direccionsensor4);
+  tempsensada5=sensors.getTempC(direccionsensor5);
+
+  Serial.print(" Sensor1: ");
+  Serial.print(tempsensada1);
+  Serial.print(" Sensor2: ");
+  Serial.print(tempsensada2);
+  Serial.print(" Sensor3: ");
+  Serial.print(tempsensada3);
+  Serial.print(" Sensor4: ");
+  Serial.print(tempsensada4);
+  Serial.print(" Sensor5: ");
+  Serial.println(tempsensada5);
 }
 
 void loop(void)
