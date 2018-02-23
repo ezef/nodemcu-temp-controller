@@ -59,7 +59,7 @@ DeviceAddress direccionsensor3 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 }
 DeviceAddress direccionsensor4 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 DeviceAddress direccionsensor5 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 
-Tempo t_temp(3*1000); // temporizador para la lectura de temperatura
+Tempo t_temp(15*1000); // temporizador para la lectura de temperatura
 
 
 ESP8266WebServer server(80);
@@ -139,6 +139,9 @@ ret += "</label> Grados "
 "      <br/>"
 "    </P>"
 "  </FORM>"
+"  <br />Temperatura Banco: ";
+ret +=tempsensada5;
+ret += " Grados"
 "</body>"
 "</html>";
 return ret;
@@ -246,11 +249,14 @@ void setferm4(){
 }
 void setup(void)
 {
-
   Serial.begin(115200);
+  delay(10);
   EEPROM.begin(512);
+  delay(10);
   sensors.begin();
+  delay(10);
   WiFi.begin(ssid, password);
+  delay(10);
   Serial.println("");
 
   // Wait for connection
@@ -283,11 +289,7 @@ void setup(void)
   tempset3= EEPROM.read(ADDR3);
   tempset4= EEPROM.read(ADDR4);
 
-  tempsensada1=sensors.getTempC(direccionsensor1);
-  tempsensada2=sensors.getTempC(direccionsensor2);
-  tempsensada3=sensors.getTempC(direccionsensor3);
-  tempsensada4=sensors.getTempC(direccionsensor4);
-  tempsensada5=sensors.getTempC(direccionsensor5);
+  getTemps();
 
   Serial.print(" Sensor1: ");
   Serial.print(tempsensada1);
@@ -305,20 +307,64 @@ void setup(void)
   pinMode(RELAY3, OUTPUT);
   pinMode(RELAY4, OUTPUT);
 }
-
-void control(){
-
-
+void getTemps(){
   sensors.requestTemperatures();
   tempsensada1= sensors.getTempC(direccionsensor1);
-
+  tempsensada2= sensors.getTempC(direccionsensor2);
+  tempsensada3= sensors.getTempC(direccionsensor3);
+  tempsensada4= sensors.getTempC(direccionsensor4);
+  tempsensada5= sensors.getTempC(direccionsensor5);
+}
+void control(){
+  getTemps();
+  
   if (tempsensada1 > tempset1 + HISTERESIS){
     digitalWrite(RELAY1, LOW);
-    Serial.println("Relay 1 ON");
+    Serial.print("Relay 1 ON - T1:");
+    Serial.println(tempsensada1);
   }else{
-    digitalWrite(RELAY1,HIGH);
-    Serial.println("Relay 1 OFF");
+    if (tempsensada1 < tempset1 - HISTERESIS){
+      digitalWrite(RELAY1,HIGH);
+      Serial.print("Relay 1 OFF- T1:");
+      Serial.println(tempsensada1);
+    }
   } 
+
+  if (tempsensada2 > tempset2 + HISTERESIS){
+    digitalWrite(RELAY2, LOW);
+    Serial.print("Relay 2 ON - T2:");
+    Serial.println(tempsensada2);
+  }else{
+    if (tempsensada2 < tempset2 - HISTERESIS){
+      digitalWrite(RELAY2,HIGH);
+      Serial.print("Relay 2 OFF- T2:");
+      Serial.println(tempsensada2);
+    }
+  }
+
+  if (tempsensada3 > tempset3 + HISTERESIS){
+    digitalWrite(RELAY3, LOW);
+    Serial.print("Relay 3 ON - T3:");
+    Serial.println(tempsensada3);
+  }else{
+    if (tempsensada3 < tempset3 - HISTERESIS){
+      digitalWrite(RELAY3,HIGH);
+      Serial.print("Relay 3 OFF- T3:");
+      Serial.println(tempsensada3);
+    }
+  }
+
+  if (tempsensada4 > tempset4 + HISTERESIS){
+    digitalWrite(RELAY4, LOW);
+    Serial.print("Relay 4 ON - T4:");
+    Serial.println(tempsensada4);
+  }else{
+    if (tempsensada4 < tempset4 - HISTERESIS){
+      digitalWrite(RELAY4,HIGH);
+      Serial.print("Relay 4 OFF- T4:");
+      Serial.println(tempsensada4);
+    }
+  }
  
 }
 
