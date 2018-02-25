@@ -35,6 +35,13 @@
 #define TEMPERATURE_PRECISION 9
 #define HISTERESIS 0.3
 
+#define SMTP_SERVER "smtp.gmail.com"
+#define SMTP_PORT 465
+#define SMTP_USER "Y2VydmV6YWVsbWFzb24="
+#define SMTP_PASS "TGFzZWN0YTc="
+
+#define THINGSPEAK_API "api.thingspeak.com"
+#define THINGSPEAK_PORT 80
 
 // Fill in your WiFi router SSID and password
 const char* ssid = "La P0sTA";
@@ -44,6 +51,11 @@ byte tempset1;
 byte tempset2;
 byte tempset3;
 byte tempset4;
+
+byte relay1 = 0;
+byte relay2 = 0;
+byte relay3 = 0;
+byte relay4 = 0;
 
 float tempsensada1;
 float tempsensada2;
@@ -57,12 +69,15 @@ DeviceAddress direccionsensor1 = { 0x28, 0xEE, 0xE3, 0xF, 0x15, 0x16, 0x2, 0xAF 
 DeviceAddress direccionsensor2 = { 0x28, 0xEE, 0x3A, 0x15, 0x18, 0x16, 0x1, 0xD3 };
 DeviceAddress direccionsensor3 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 DeviceAddress direccionsensor4 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
-DeviceAddress direccionsensor5 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
+DeviceAddress direccionsensor5 = { 0x28, 0xEE, 0x2C, 0x93, 0x19, 0x16, 0x1, 0x48 };
 
 Tempo t_temp(15*1000); // temporizador para la lectura de temperatura
+unsigned long ultimoTiempo;
+int frecuenciaEnvioMails = (60 * 1000);
 
 
 ESP8266WebServer server(80);
+WiFiClientSecure client;
 
 String html_login(){
 return "<!DOCTYPE HTML>"
@@ -258,6 +273,7 @@ void setup(void)
   WiFi.begin(ssid, password);
   delay(10);
   Serial.println("");
+  ultimoTiempo=millis();
 
   // Wait for connection
   int veces=0;
@@ -315,6 +331,23 @@ void getTemps(){
   tempsensada4= sensors.getTempC(direccionsensor4);
   tempsensada5= sensors.getTempC(direccionsensor5);
 }
+
+void informar(){
+  WiFiClient client;
+  
+  if (client.connect(THINGSPEAK_API,THINGSPEAK_PORT) == 1) {
+    delay(5);
+    Serial.println("conectado a thingspeak");
+    //Ferm 1
+    client.println("GET /update?api_key=O1CBB36E7XMMKZIH&field1=" + String(tempsensada1)+"&field2=" + String(tempset1)+"&field4=" + String(tempsensada5)+"\n");
+    client.stop();
+  } else {
+    Serial.println(F("fallo conexion a thingspeak"));
+  }
+}
+
+}
+
 void control(){
   getTemps();
   
@@ -322,11 +355,13 @@ void control(){
     digitalWrite(RELAY1, LOW);
     Serial.print("Relay 1 ON - T1:");
     Serial.println(tempsensada1);
+    relay1=true;
   }else{
     if (tempsensada1 < tempset1 - HISTERESIS){
       digitalWrite(RELAY1,HIGH);
       Serial.print("Relay 1 OFF- T1:");
       Serial.println(tempsensada1);
+      relay1=false;
     }
   } 
 
@@ -334,11 +369,13 @@ void control(){
     digitalWrite(RELAY2, LOW);
     Serial.print("Relay 2 ON - T2:");
     Serial.println(tempsensada2);
+    relay2= true;
   }else{
     if (tempsensada2 < tempset2 - HISTERESIS){
       digitalWrite(RELAY2,HIGH);
       Serial.print("Relay 2 OFF- T2:");
       Serial.println(tempsensada2);
+      relay2=false;
     }
   }
 
@@ -346,11 +383,13 @@ void control(){
     digitalWrite(RELAY3, LOW);
     Serial.print("Relay 3 ON - T3:");
     Serial.println(tempsensada3);
+    relay3 = true;
   }else{
     if (tempsensada3 < tempset3 - HISTERESIS){
       digitalWrite(RELAY3,HIGH);
       Serial.print("Relay 3 OFF- T3:");
       Serial.println(tempsensada3);
+      relay3=false;
     }
   }
 
@@ -358,15 +397,117 @@ void control(){
     digitalWrite(RELAY4, LOW);
     Serial.print("Relay 4 ON - T4:");
     Serial.println(tempsensada4);
+    relay4=true;
   }else{
     if (tempsensada4 < tempset4 - HISTERESIS){
       digitalWrite(RELAY4,HIGH);
       Serial.print("Relay 4 OFF- T4:");
       Serial.println(tempsensada4);
+      relay4=false;
     }
   }
+
+  //si el banco de frio se calienta, enviar mail avisando
+  if ((millis() - ultimoTiempo)> frecuenciaEnvioMails){
+    ultimoTiempo = millis();
+    if (tempsensada5 >= tempset1 || tempsensada5 >= tempset2){
+      sendEmail();
+    }
+  }
+  informar();
  
 }
+
+byte sendEmail()
+{
+
+  if (client.connect(SMTP_SERVER, SMTP_PORT) == 1) {
+    Serial.println(F("connected"));
+  } else {
+    Serial.println(F("connection failed"));
+    return 0;
+  }
+  if (!eRcv()) return 0;
+
+  Serial.println(F("Sending EHLO"));
+  client.println("EHLO www.elmason.com.ar");
+  if (!eRcv()) return 0;
+  Serial.println(F("Sending auth login"));
+  client.println("auth login");
+  if (!eRcv()) return 0;
+  Serial.println(F("Sending User"));
+  // Change to your base64, ASCII encoded user
+  client.println(SMTP_USER); // SMTP UserID
+  if (!eRcv()) return 0;
+  Serial.println(F("Sending Password"));
+  // change to your base64, ASCII encoded password
+  client.println(SMTP_PASS);//  SMTP Passw
+     if (!eRcv()) return 0;
+    Serial.println(F("Sending From"));   // change to your email address (sender)
+   client.println(F("MAIL From: <cervezaelmason@gmail.com>"));// not important 
+   if (!eRcv()) return 0;   // change to recipient address
+    Serial.println(F("Sending To"));
+    client.println(F("RCPT To: <cervezaelmason@gmail.com>"));
+    if (!eRcv()) return 0;
+    Serial.println(F("Sending DATA"));
+    client.println(F("DATA"));
+    if (!eRcv()) return 0;
+    Serial.println(F("Sending email"));   // change to recipient address
+   client.println(F("To: cervezaelmason@gmail.com"));   // change to your address
+   client.println(F("From: cervezaelmason@gmail.com"));
+ client.println(F("Subject: Banco de Frio no da abasto\r\n"));
+    client.print(F("Temp1: "));
+    client.println(tempsensada1);
+    client.print(F("Temp2: "));
+    client.println(tempsensada2);
+    client.print(F("Temp3: "));
+    client.println(tempsensada3);
+    client.print(F("Temp4: "));
+    client.println(tempsensada4);
+    client.print(F("Temp5: "));
+    client.println(tempsensada5);
+    client.println(WiFi.localIP());
+    client.println("Eh Chileno que se siente vivir en un pasillo");
+    client.println(F("."));
+    if (!eRcv()) return 0;
+    Serial.println(F("Sending QUIT"));
+    client.println(F("QUIT"));
+    if (!eRcv()) return 0;
+    client.stop();
+    Serial.println(F("disconnected"));
+    return 1;
+  }
+  byte eRcv()
+    {
+    byte respCode;
+    byte thisByte;
+    int loopCount = 0;
+    while (!client.available())
+    {
+      delay(1);
+      loopCount++;     // if nothing received for 10 seconds, timeout
+      if (loopCount > 10000) {
+      client.stop();
+      Serial.println(F("\r\nTimeout"));
+      return 0;
+    }
+    }
+
+    respCode = client.peek();
+    while (client.available())
+    {
+    thisByte = client.read();
+    Serial.write(thisByte);
+    }
+
+    if (respCode >= '4')
+    {
+    //  efail();
+    return 0;
+    }
+    return 1;
+  } 
+
 
 void loop(void)
 {
