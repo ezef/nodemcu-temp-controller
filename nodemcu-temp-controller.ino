@@ -20,6 +20,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <tempo.h>
+#include "constantes.h"
 
 #define ADDR1 0 //direccion de la EEPROM para la tempSet1
 #define ADDR2 1 // direccion de la EEPROM para la tempSet2
@@ -37,15 +38,12 @@
 
 #define SMTP_SERVER "smtp.gmail.com"
 #define SMTP_PORT 465
-#define SMTP_USER "Y2VydmV6YWVsbWFzb24="
-#define SMTP_PASS "TGFzZWN0YTc="
 
-#define THINGSPEAK_API "api.thingspeak.com"
-#define THINGSPEAK_PORT 80
+
 
 // Fill in your WiFi router SSID and password
-const char* ssid = "La P0sTA";
-const char* password = "laredonda1239";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
 
 byte tempset1;
 byte tempset2;
@@ -335,17 +333,31 @@ void getTemps(){
 void informar(){
   WiFiClient client;
   
-  if (client.connect(THINGSPEAK_API,THINGSPEAK_PORT) == 1) {
-    delay(5);
-    Serial.println("conectado a thingspeak");
-    //Ferm 1
-    client.println("GET /update?api_key=O1CBB36E7XMMKZIH&field1=" + String(tempsensada1)+"&field2=" + String(tempset1)+"&field4=" + String(tempsensada5)+"\n");
+  if (client.connect(DATOS_IP,DATOS_PORT) == 1) {
+    Serial.println("conectado a la API");
+    client.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+" HTTP/1.0");
+    Serial.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+" HTTP/1.0");
+    client.println("Host: cervezaelmason.com.ar");
+    Serial.println("Host: cervezaelmason.com.ar");
+    client.println();
+    Serial.println();
+    int loopCount = 0;
+    while (!client.available() && loopCount <= 3000)
+    {
+      delay(1);
+      loopCount++;     // if nothing received for 10 seconds, timeout
+    }
+    if (loopCount >= 3000) {
+      Serial.println(F("\r\nTimeout"));
+    }else{
+      Serial.println(loopCount);
+      String msj=client.readStringUntil('\r');
+      Serial.println(msj);
+    }
     client.stop();
   } else {
-    Serial.println(F("fallo conexion a thingspeak"));
+    Serial.println(F("fallo conexion a la api"));
   }
-}
-
 }
 
 void control(){
