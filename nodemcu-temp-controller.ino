@@ -36,10 +36,6 @@
 #define TEMPERATURE_PRECISION 9
 #define HISTERESIS 0.3
 
-#define SMTP_SERVER "smtp.gmail.com"
-#define SMTP_PORT 465
-
-
 
 // Fill in your WiFi router SSID and password
 const char* ssid = WIFI_SSID;
@@ -71,8 +67,6 @@ DeviceAddress direccionsensor5 = { 0x28, 0xEE, 0x2C, 0x93, 0x19, 0x16, 0x1, 0x48
 
 Tempo t_temp(15*1000); // temporizador para la lectura de temperatura
 unsigned long ultimoTiempo;
-int frecuenciaEnvioMails = (60 * 1000);
-
 
 ESP8266WebServer server(80);
 WiFiClientSecure client;
@@ -423,107 +417,9 @@ void control(){
     }
   }
 
-  //si el banco de frio se calienta, enviar mail avisando
-  if ((millis() - ultimoTiempo)> frecuenciaEnvioMails){
-    ultimoTiempo = millis();
-    if (tempsensada5 >= tempset1 || tempsensada5 >= tempset2){
-      sendEmail();
-    }
-  }
   informar();
  
 }
-
-byte sendEmail()
-{
-
-  if (client.connect(SMTP_SERVER, SMTP_PORT) == 1) {
-    Serial.println(F("connected"));
-  } else {
-    Serial.println(F("connection failed"));
-    return 0;
-  }
-  if (!eRcv()) return 0;
-
-  Serial.println(F("Sending EHLO"));
-  client.println("EHLO www.elmason.com.ar");
-  if (!eRcv()) return 0;
-  Serial.println(F("Sending auth login"));
-  client.println("auth login");
-  if (!eRcv()) return 0;
-  Serial.println(F("Sending User"));
-  // Change to your base64, ASCII encoded user
-  client.println(SMTP_USER); // SMTP UserID
-  if (!eRcv()) return 0;
-  Serial.println(F("Sending Password"));
-  // change to your base64, ASCII encoded password
-  client.println(SMTP_PASS);//  SMTP Passw
-     if (!eRcv()) return 0;
-    Serial.println(F("Sending From"));   // change to your email address (sender)
-   client.println(F("MAIL From: <cervezaelmason@gmail.com>"));// not important 
-   if (!eRcv()) return 0;   // change to recipient address
-    Serial.println(F("Sending To"));
-    client.println(F("RCPT To: <cervezaelmason@gmail.com>"));
-    if (!eRcv()) return 0;
-    Serial.println(F("Sending DATA"));
-    client.println(F("DATA"));
-    if (!eRcv()) return 0;
-    Serial.println(F("Sending email"));   // change to recipient address
-   client.println(F("To: cervezaelmason@gmail.com"));   // change to your address
-   client.println(F("From: cervezaelmason@gmail.com"));
- client.println(F("Subject: Banco de Frio no da abasto\r\n"));
-    client.print(F("Temp1: "));
-    client.println(tempsensada1);
-    client.print(F("Temp2: "));
-    client.println(tempsensada2);
-    client.print(F("Temp3: "));
-    client.println(tempsensada3);
-    client.print(F("Temp4: "));
-    client.println(tempsensada4);
-    client.print(F("Temp5: "));
-    client.println(tempsensada5);
-    client.println(WiFi.localIP());
-    client.println("Eh Chileno que se siente vivir en un pasillo");
-    client.println(F("."));
-    if (!eRcv()) return 0;
-    Serial.println(F("Sending QUIT"));
-    client.println(F("QUIT"));
-    if (!eRcv()) return 0;
-    client.stop();
-    Serial.println(F("disconnected"));
-    return 1;
-  }
-  byte eRcv()
-    {
-    byte respCode;
-    byte thisByte;
-    int loopCount = 0;
-    while (!client.available())
-    {
-      delay(1);
-      loopCount++;     // if nothing received for 10 seconds, timeout
-      if (loopCount > 10000) {
-      client.stop();
-      Serial.println(F("\r\nTimeout"));
-      return 0;
-    }
-    }
-
-    respCode = client.peek();
-    while (client.available())
-    {
-    thisByte = client.read();
-    Serial.write(thisByte);
-    }
-
-    if (respCode >= '4')
-    {
-    //  efail();
-    return 0;
-    }
-    return 1;
-  } 
-
 
 void loop(void)
 {
