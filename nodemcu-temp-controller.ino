@@ -26,11 +26,13 @@
 #define ADDR2 1 // direccion de la EEPROM para la tempSet2
 #define ADDR3 2 //direccion de la EEPROM para la tempSet3
 #define ADDR4 3 // direccion de la EEPROM para la tempSet4
+#define ADDR5 4 // direccion de la EEPROM para la tempSet5
 
 #define RELAY1 5 
 #define RELAY2 4 
 #define RELAY3 0 
 #define RELAY4 2 
+#define RELAY5   // *************FALTA DEFINIR********************
 
 #define ONE_WIRE_BUS 14
 #define TEMPERATURE_PRECISION 9
@@ -49,11 +51,13 @@ byte tempset1;
 byte tempset2;
 byte tempset3;
 byte tempset4;
+byte tempset5;
 
 byte relay1 = 0;
 byte relay2 = 0;
 byte relay3 = 0;
 byte relay4 = 0;
+byte relay5 = 0;
 
 float tempsensada1;
 float tempsensada2;
@@ -152,9 +156,19 @@ ret += "</label> Grados "
 "      <br/>"
 "    </P>"
 "  </FORM>"
-"  <br />Temperatura Banco: ";
-ret +=tempsensada5;
-ret += " Grados"
+"  <br />"
+"  <FORM action=\"/banco\" method=\"post\">"
+"    <P>"
+"      Banco de Frio: <b><label for=\"sarasa\">";
+ret +=tempsensadabanco;
+ret += "</label></b> grados ---- Seteado: <label for=\"sarasa\">";
+ret += EEPROM.read(ADDR5);
+ret += "</label> Grados "
+"      <INPUT type=\"text\" name=\"tempset\">" 
+"      <INPUT type=\"submit\" value=\"Enviar\">"
+"      <br/>"
+"    </P>"
+"  </FORM>"
 "</body>"
 "</html>";
 return ret;
@@ -260,6 +274,19 @@ void setferm4(){
     returnFail("Temperatura seteada Vacia");
   }  
 }
+
+void setbanco(){
+  if ( server.arg("tempset") != ""){
+    Serial.print(" Seteo de temp de banco de frio: ");
+    Serial.println(server.arg("tempset"));
+    tempset5= (byte)server.arg("tempset").toInt();
+    EEPROM.put(ADDR5,tempset5);
+    EEPROM.commit();
+    returnOK();
+  }else{
+    returnFail("Temperatura seteada Vacia");
+  }  
+}
 void setup(void)
 {
   Serial.begin(115200);
@@ -292,6 +319,7 @@ void setup(void)
   server.on("/ferm2", setferm2);
   server.on("/ferm3", setferm3);
   server.on("/ferm4", setferm4);
+  server.on("/banco", setbanco);
   server.onNotFound(handleNotFound);
 
   server.begin();
@@ -302,6 +330,7 @@ void setup(void)
   tempset2= EEPROM.read(ADDR2);
   tempset3= EEPROM.read(ADDR3);
   tempset4= EEPROM.read(ADDR4);
+  tempset5= EEPROM.read(ADDR5);
 
   getTemps();
 
@@ -320,10 +349,12 @@ void setup(void)
   pinMode(RELAY2, OUTPUT);
   pinMode(RELAY3, OUTPUT);
   pinMode(RELAY4, OUTPUT);
+  pinMode(RELAY5, OUTPUT);
   digitalWrite(RELAY1,HIGH);
   digitalWrite(RELAY2,HIGH);
   digitalWrite(RELAY3,HIGH);
   digitalWrite(RELAY4,HIGH);
+  digitalWrite(RELAY5,HIGH);
 }
 void getTemps(){
   sensors.requestTemperatures();
@@ -339,8 +370,8 @@ void informar(){
   
   if (client.connect(DATOS_IP,DATOS_PORT) == 1) {
     Serial.println("conectado a la API");
-    client.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+" HTTP/1.0");
-    Serial.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+" HTTP/1.0");
+    client.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+"&tempset5="+String(tempset5)+"&accioncontrol5="+String(relay5)+" HTTP/1.0");
+    Serial.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+"&tempset5="+String(tempset5)+"&accioncontrol5="+String(relay5)+" HTTP/1.0");
     client.println("Host: cervezaelmason.com.ar");
     Serial.println("Host: cervezaelmason.com.ar");
     client.println();
@@ -420,6 +451,20 @@ void control(){
       Serial.print("Relay 4 OFF- T4:");
       Serial.println(tempsensada4);
       relay4=false;
+    }
+  }
+
+  if (tempsensada5 > tempset5 + HISTERESIS){
+    digitalWrite(RELAY5, LOW);
+    Serial.print("Relay 5 ON - Banco:");
+    Serial.println(tempsensada5);
+    relay5=true;
+  }else{
+    if (tempsensada5 < tempset5 - HISTERESIS){
+      digitalWrite(RELAY5,HIGH);
+      Serial.print("Relay 5 OFF- Banco:");
+      Serial.println(tempsensada5);
+      relay5=false;
     }
   }
 
