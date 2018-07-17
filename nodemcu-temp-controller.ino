@@ -60,6 +60,7 @@ float tempsensada2;
 float tempsensada3;
 float tempsensada4;
 float tempsensada5;
+float tempsensadaambiente;
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
@@ -68,6 +69,7 @@ DeviceAddress direccionsensor2 = { 0x28, 0xEE, 0x3A, 0x15, 0x18, 0x16, 0x1, 0xD3
 DeviceAddress direccionsensor3 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 DeviceAddress direccionsensor4 = { 0x28, 0x1D, 0x39, 0x31, 0x2, 0x0, 0x0, 0xF0 };
 DeviceAddress direccionsensor5 = { 0x28, 0xEE, 0x2C, 0x93, 0x19, 0x16, 0x1, 0x48 };
+DeviceAddress direccionsensorambiente = { 0x28, 0xEE, 0x2C, 0x93, 0x19, 0x16, 0x1, 0x48 }; // sensor para la temperatura ambiente
 
 Tempo t_temp(15*1000); // temporizador para la lectura de temperatura
 unsigned long ultimoTiempo;
@@ -152,8 +154,8 @@ ret += "</label> Grados "
 "      <br/>"
 "    </P>"
 "  </FORM>"
-"  <br />Temperatura Banco: ";
-ret +=tempsensada5;
+"  <br />Temperatura Ambiente: ";
+ret +=tempsensadaambiente;
 ret += " Grados"
 "</body>"
 "</html>";
@@ -332,6 +334,7 @@ void getTemps(){
   tempsensada3= sensors.getTempC(direccionsensor3);
   tempsensada4= sensors.getTempC(direccionsensor4);
   tempsensada5= sensors.getTempC(direccionsensor5);
+  tempsensadaambiente = sensors.getTempC(direccionsensorambiente);
 }
 
 void informar(){
@@ -339,8 +342,8 @@ void informar(){
   
   if (client.connect(DATOS_IP,DATOS_PORT) == 1) {
     Serial.println("conectado a la API");
-    client.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+" HTTP/1.0");
-    Serial.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+" HTTP/1.0");
+    client.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+"&tempsensadaambiente="+String(tempsensadaambiente)+" HTTP/1.0");
+    Serial.println("GET /api.php?tempsensada1=" + String(tempsensada1) + "&tempset1="+String(tempset1)+"&accioncontrol1="+String(relay1)+"&tempsensada2="+String(tempsensada2)+"&tempset2="+String(tempset2)+"&accioncontrol2="+String(relay2)+"&tempsensada3="+String(tempsensada3)+"&tempset3="+String(tempset3)+"&accioncontrol3="+String(relay3)+"&tempsensada4="+String(tempsensada4)+"&tempset4="+String(tempset4)+"&accioncontrol4="+String(relay4)+"&tempsensada5="+String(tempsensada5)+"&tempsensadaambiente="+String(tempsensadaambiente)+" HTTP/1.0");
     client.println("Host: cervezaelmason.com.ar");
     Serial.println("Host: cervezaelmason.com.ar");
     client.println();
