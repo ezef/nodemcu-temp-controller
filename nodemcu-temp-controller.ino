@@ -32,7 +32,7 @@
 #define RELAY2 4 
 #define RELAY3 0 
 #define RELAY4 2 
-#define RELAY5   // *************FALTA DEFINIR********************
+#define RELAY5 D6
 
 #define ONE_WIRE_BUS 14
 #define TEMPERATURE_PRECISION 9
@@ -160,7 +160,7 @@ ret += "</label> Grados "
 "  <FORM action=\"/banco\" method=\"post\">"
 "    <P>"
 "      Banco de Frio: <b><label for=\"sarasa\">";
-ret +=tempsensadabanco;
+ret +=tempsensada5;
 ret += "</label></b> grados ---- Seteado: <label for=\"sarasa\">";
 ret += EEPROM.read(ADDR5);
 ret += "</label> Grados "
